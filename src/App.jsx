@@ -238,7 +238,8 @@ export default function App() {
           <div ref={bottomRef} />
         </div>
       </main>
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-5xl fixed bottom-0 left-0 right-0 z-50  ">
+        <div className="relative">
         <div className="rounded-[28px] border border-white/10 bg-zinc-900/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
           <div className="px-6 pt-5">
             <textarea
@@ -293,6 +294,7 @@ export default function App() {
               </button>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
