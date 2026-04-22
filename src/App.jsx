@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Sparkles,
   SendHorizontal,
@@ -6,12 +6,13 @@ import {
   BarChart3,
   PenTool,
   Wrench,
+  ArrowUp,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-
+import { Plus, Mic, ChevronDown, AudioLines, Clock3 } from "lucide-react";
 const featureCards = [
   {
     icon: Lightbulb,
@@ -46,16 +47,14 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const abortControllerRef = useRef(null);
-
+  const bottomRef = useRef(null);
   const hasMessages = messages.length > 0;
 
   const appendChunkToMessage = (messageId, chunk) => {
     setMessages((prev) =>
       prev.map((msg) =>
-        msg.id === messageId
-          ? { ...msg, content: msg.content + chunk }
-          : msg
-      )
+        msg.id === messageId ? { ...msg, content: msg.content + chunk } : msg,
+      ),
     );
   };
 
@@ -70,7 +69,10 @@ export default function App() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messages: conversation.map(({ role, content }) => ({ role, content })),
+          messages: conversation.map(({ role, content }) => ({
+            role,
+            content,
+          })),
         }),
         signal: controller.signal,
 
@@ -110,8 +112,8 @@ export default function App() {
         prev.map((msg) =>
           msg.id === assistantMessageId && !msg.content
             ? { ...msg, content: "Something went wrong." }
-            : msg
-        )
+            : msg,
+        ),
       );
     } finally {
       setLoading(false);
@@ -141,6 +143,9 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50">
       <header className="border-b border-white/8 bg-zinc-950/90 backdrop-blur">
@@ -223,36 +228,70 @@ export default function App() {
                         : "border border-white/10 bg-zinc-900 text-zinc-100"
                     }`}
                   >
-                    {message.content || (loading && message.role === "ai" ? "Typing..." : "")}
+                    {message.content ||
+                      (loading && message.role === "ai" ? "Typing..." : "")}
                   </div>
                 </div>
               ))}
             </div>
           )}
+          <div ref={bottomRef} />
         </div>
       </main>
-
-      <div className="fixed bottom-6 left-1/2 z-20 w-[calc(100%-24px)] max-w-3xl -translate-x-1/2">
-        <div className="rounded-3xl border border-white/10 bg-zinc-900/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
-          <div className="flex items-end gap-3 rounded-2xl bg-zinc-900/70 px-3 py-2">
-            <Textarea
+      <div className="mx-auto max-w-5xl">
+        <div className="rounded-[28px] border border-white/10 bg-zinc-900/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
+          <div className="px-6 pt-5">
+            <textarea
               value={input}
               onChange={(event) => setInput(event.target.value)}
+              placeholder="Ask anything"
+              rows={2}
               onKeyDown={handleKeyDown}
-              placeholder="Ask anything..."
-              className="min-h-[52px] max-h-40 border-0 bg-transparent text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0"
+              className="max-h-40 w-full resize-none bg-transparent text-[17px] leading-7 text-white placeholder:text-[#b8b8b8] outline-none"
             />
-            <Button
-              onClick={handleSend}
-              disabled={loading}
-              className="h-11 w-11 shrink-0 rounded-full bg-white p-0 text-zinc-950 hover:bg-zinc-200 disabled:opacity-50"
-              aria-label="Send message"
-            >
-              <SendHorizontal className="h-4 w-4" />
-            </Button>
           </div>
-          <div className="mt-2 px-2 text-xs text-zinc-500">
-            Press Enter to send and Shift + Enter for a new line.
+
+          <div className="flex items-center justify-between px-5 pb-4 pt-2">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-white/95 transition hover:bg-white/5"
+                aria-label="Add"
+              >
+                <Plus className="h-6 w-6 stroke-[2]" />
+              </button>
+
+              <button
+                type="button"
+                className="inline-flex h-10 items-center gap-2 rounded-full px-3 text-[16px] font-medium text-[#8ec5ff] transition hover:bg-white/5"
+              >
+                <Clock3 className="h-5 w-5" />
+                <span>Thinking</span>
+                <ChevronDown className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-white/90 transition hover:bg-white/5"
+                aria-label="Microphone"
+              >
+                <Mic className="h-5 w-5" />
+              </button>
+
+              <button
+                type="button"
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-black transition hover:bg-white/90"
+                aria-label="Voice mode"
+              >
+                {input ? (
+                  <ArrowUp className="h-5 w-5" />
+                ) : (
+                  <AudioLines className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
