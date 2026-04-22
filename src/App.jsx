@@ -1,69 +1,145 @@
-import { useMemo, useState } from 'react'
+import { useRef, useState } from "react";
 import {
-  BarChart3,
-  Lightbulb,
-  PenTool,
-  SendHorizonal,
   Sparkles,
+  SendHorizontal,
+  Lightbulb,
+  BarChart3,
+  PenTool,
   Wrench,
-} from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { fetchEventSource } from "@microsoft/fetch-event-source";
 
 const featureCards = [
   {
     icon: Lightbulb,
-    title: 'Get ideas',
-    description: 'Brainstorm creative solutions',
+    title: "Get ideas",
+    description: "Brainstorm creative solutions",
   },
   {
     icon: BarChart3,
-    title: 'Analyze data',
-    description: 'Extract insights from information',
+    title: "Analyze data",
+    description: "Extract insights from information",
   },
   {
     icon: PenTool,
-    title: 'Write content',
-    description: 'Create engaging text and copy',
+    title: "Write content",
+    description: "Create engaging text and copy",
   },
   {
     icon: Wrench,
-    title: 'Solve problems',
-    description: 'Find answers to your questions',
+    title: "Solve problems",
+    description: "Find answers to your questions",
   },
-]
+];
+
+const createMessage = (role, content = "") => ({
+  id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  role,
+  content,
+});
 
 export default function App() {
-  const [input, setInput] = useState('')
-  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const abortControllerRef = useRef(null);
 
-  const hasMessages = messages.length > 0
+  const hasMessages = messages.length > 0;
 
-  const messageGroups = useMemo(() => messages, [messages])
+  const appendChunkToMessage = (messageId, chunk) => {
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === messageId
+          ? { ...msg, content: msg.content + chunk }
+          : msg
+      )
+    );
+  };
 
-  const handleSend = () => {
-    const trimmed = input.trim()
-    if (!trimmed) return
+  const streamChatResponse = async (conversation, assistantMessageId) => {
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
-    setMessages((prev) => [
-      ...prev,
-      { id: `${Date.now()}-user`, role: 'user', content: trimmed },
-      {
-        id: `${Date.now()}-assistant`,
-        role: 'assistant',
-        content: 'Thanks! Your request has been captured.',
-      },
-    ])
-    setInput('')
-  }
+    try {
+      await fetchEventSource("http://localhost:8080/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: conversation.map(({ role, content }) => ({ role, content })),
+        }),
+        signal: controller.signal,
+
+        async onopen(response) {
+          if (!response.ok) {
+            throw new Error(`Failed with status ${response.status}`);
+          }
+        },
+
+        onmessage(event) {
+          if (!event.data) return;
+
+          const parsed = JSON.parse(event.data);
+
+          if (parsed?.type === "ai" && parsed?.payload?.text) {
+            appendChunkToMessage(assistantMessageId, parsed.payload.text);
+          }
+
+          if (parsed?.type === "end") {
+            controller.abort();
+          }
+        },
+
+        onclose() {
+          setLoading(false);
+        },
+
+        onerror(error) {
+          console.error("Streaming error:", error);
+          throw error;
+        },
+      });
+    } catch (error) {
+      console.error(error);
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessageId && !msg.content
+            ? { ...msg, content: "Something went wrong." }
+            : msg
+        )
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSend = async () => {
+    const trimmed = input.trim();
+    if (!trimmed || loading) return;
+
+    const userMessage = createMessage("user", trimmed);
+    const assistantMessage = createMessage("ai", "");
+
+    const nextConversation = [...messages, userMessage, assistantMessage];
+
+    setMessages(nextConversation);
+    setInput("");
+    setLoading(true);
+
+    await streamChatResponse(nextConversation, assistantMessage.id);
+  };
 
   const handleKeyDown = (event) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault()
-      handleSend()
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      handleSend();
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50">
@@ -74,7 +150,9 @@ export default function App() {
               <Sparkles className="h-6 w-6 text-white" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-xs text-zinc-500">abhisheklohia46458@gmail.com</p>
+              <p className="truncate text-xs text-zinc-500">
+                abhisheklohia46458@gmail.com
+              </p>
               <div className="mt-1">
                 <h1 className="text-base font-semibold tracking-tight text-zinc-100 sm:text-lg">
                   AI Expense Tracker
@@ -101,8 +179,8 @@ export default function App() {
               How can I help you today?
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-zinc-400 sm:text-base">
-              Ask me anything, and I&apos;ll do my best to assist you with information,
-              analysis, and creative solutions.
+              Ask me anything, and I&apos;ll do my best to assist you with
+              information, analysis, and creative solutions.
             </p>
 
             <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -116,8 +194,12 @@ export default function App() {
                       <Icon className="h-5 w-5 text-zinc-100" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-white">{title}</h3>
-                      <p className="mt-2 text-sm leading-6 text-zinc-400">{description}</p>
+                      <h3 className="text-lg font-semibold text-white">
+                        {title}
+                      </h3>
+                      <p className="mt-2 text-sm leading-6 text-zinc-400">
+                        {description}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -127,19 +209,21 @@ export default function App() {
 
           {hasMessages && (
             <div className="mt-10 w-full max-w-3xl space-y-4">
-              {messageGroups.map((message) => (
+              {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  }`}
                 >
                   <div
                     className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm ${
-                      message.role === 'user'
-                        ? 'bg-white text-zinc-950'
-                        : 'border border-white/10 bg-zinc-900 text-zinc-100'
+                      message.role === "user"
+                        ? "bg-white text-zinc-950"
+                        : "border border-white/10 bg-zinc-900 text-zinc-100"
                     }`}
                   >
-                    {message.content}
+                    {message.content || (loading && message.role === "ai" ? "Typing..." : "")}
                   </div>
                 </div>
               ))}
@@ -156,14 +240,15 @@ export default function App() {
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask anything..."
-              className="min-h-[52px] max-h-40"
+              className="min-h-[52px] max-h-40 border-0 bg-transparent text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0"
             />
             <Button
               onClick={handleSend}
-              className="h-11 w-11 shrink-0 rounded-full bg-white p-0 text-zinc-950 hover:bg-zinc-200"
+              disabled={loading}
+              className="h-11 w-11 shrink-0 rounded-full bg-white p-0 text-zinc-950 hover:bg-zinc-200 disabled:opacity-50"
               aria-label="Send message"
             >
-              <SendHorizonal className="h-4 w-4" />
+              <SendHorizontal className="h-4 w-4" />
             </Button>
           </div>
           <div className="mt-2 px-2 text-xs text-zinc-500">
@@ -172,5 +257,5 @@ export default function App() {
         </div>
       </div>
     </div>
-  )
+  );
 }
