@@ -21,6 +21,7 @@ import MessageAvatar from "./components/avatar/MessageAvatar";
 import AddDropdown from "./components/AddDropdown/AddDropdown";
 import { ChartMessageCard } from "./components/charts/ChartMessageCard";
 import ToChartSeries from "./helper/ToChartSeries";
+import Header from "./components/header/Header";
 
 const featureCards = [
   {
@@ -284,48 +285,24 @@ export default function App() {
   };
 
   const handlePdfSelect = async (file) => {
-  const formData = new FormData();
-  formData.append("file", file);
+    const formData = new FormData();
+    formData.append("file", file);
 
-  const res = await fetch("/api/chat/upload", {
-    method: "POST",
-    body: formData,
-  });
+    const res = await fetch("/api/chat/upload", {
+      method: "POST",
+      body: formData,
+    });
 
-  const data = await res.json();
-  console.log(file,'file ---->');
-};
+    const data = await res.json();
+    console.log(file, "file ---->");
+  };
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50">
-      <header className="border-b border-white/8 bg-zinc-950/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-500 via-violet-500 to-sky-400 shadow-lg shadow-violet-950/30">
-              <Gem className="h-6 w-6 text-white" />
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-xs text-zinc-500">
-                abhisheklohia46458@gmail.com
-              </p>
-              <div className="mt-1">
-                <h1 className="text-base font-semibold tracking-tight text-zinc-100 sm:text-lg">
-                  AI Expense Tracker
-                </h1>
-                <p className="text-sm text-zinc-500">Powered by advanced AI</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
-            Online
-          </div>
-        </div>
-      </header>
-
+      <Header />
       <main className="mx-auto flex min-h-[calc(100vh-82px)] max-w-7xl flex-col px-4 pb-52 pt-10 sm:px-6 sm:pb-56 lg:px-8">
         <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center">
           {!hasMessages && (
@@ -408,13 +385,8 @@ export default function App() {
 
             <div className="flex items-center justify-between px-5 pb-4 pt-2">
               <div className="flex items-center gap-3">
-                <AddDropdown
-                  onPdfSelect={handlePdfSelect}
-                />
-                <AddDropdown
-                  isThinking={true}
-                  loading={loading}
-                />
+                <AddDropdown onPdfSelect={handlePdfSelect} />
+                <AddDropdown isThinking={true} loading={loading} />
               </div>
 
               <div className="flex items-center gap-2">
