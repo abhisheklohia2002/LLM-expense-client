@@ -283,6 +283,18 @@ export default function App() {
     }
   };
 
+  const handlePdfSelect = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch("/api/chat/upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await res.json();
+  console.log(file,'file ---->');
+};
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -329,29 +341,6 @@ export default function App() {
                 Ask me anything, and I&apos;ll do my best to assist you with
                 information, analysis, and creative solutions.
               </p>
-
-              {/* <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-2">
-                {featureCards.map(({ icon: Icon, title, description }) => (
-                  <Card
-                    key={title}
-                    className="h-full rounded-2xl border-white/10 bg-zinc-900/70 transition-transform duration-200 hover:-translate-y-0.5 hover:border-white/15"
-                  >
-                    <CardContent className="flex h-full flex-col items-start gap-4 p-6 text-left">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-zinc-800/80">
-                        <Icon className="h-5 w-5 text-zinc-100" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-white">
-                          {title}
-                        </h3>
-                        <p className="mt-2 text-sm leading-6 text-zinc-400">
-                          {description}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div> */}
             </div>
           )}
 
@@ -419,20 +408,13 @@ export default function App() {
 
             <div className="flex items-center justify-between px-5 pb-4 pt-2">
               <div className="flex items-center gap-3">
-                <AddDropdown />
-                <button
-                  type="button"
-                  onClick={loading ? handleStop : undefined}
-                  className="group inline-flex h-10 items-center gap-2 rounded-full px-3 text-[16px] font-medium text-[#8ec5ff] transition hover:bg-white/5"
-                >
-                  <div className="relative h-5 w-5">
-                    <Clock3 className="absolute inset-0 h-5 w-5 transition-opacity duration-200 group-hover:opacity-0" />
-                    <X className="absolute inset-0 h-5 w-5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                  </div>
-
-                  <span>{loading ? "Thinking" : "Ready"}</span>
-                  <ChevronDown className="h-4 w-4" />
-                </button>
+                <AddDropdown
+                  onPdfSelect={handlePdfSelect}
+                />
+                <AddDropdown
+                  isThinking={true}
+                  loading={loading}
+                />
               </div>
 
               <div className="flex items-center gap-2">
