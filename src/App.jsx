@@ -12,9 +12,11 @@ import {
   ChevronDown,
   AudioLines,
   Clock3,
+  Gem,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
+import ToolMessageCard from "./components/ui/toolCard/ToolMessageCard";
 
 const featureCards = [
   {
@@ -46,6 +48,21 @@ const createMessage = (role, content = "", extra = {}) => ({
   ...extra,
 });
 
+const createToolCallMessage = (toolName, args) => ({
+  id: `tool-call-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  role: "tool",
+  kind: "tool_call",
+  toolName,
+  args,
+});
+
+const createToolResultMessage = (toolName, result) => ({
+  id: `tool-result-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  role: "tool",
+  kind: "tool_result",
+  toolName,
+  result,
+});
 export default function App() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
@@ -112,14 +129,10 @@ export default function App() {
     return "";
   };
 
-  const streamChatResponse = async (
-    conversation,
-    assistantMessageId,
-    toolMessageId,
-  ) => {
+  const streamChatResponse = async (conversation, assistantMessageId) => {
     const controller = new AbortController();
     abortControllerRef.current = controller;
-
+    let toolMessageId = null;
     try {
       await fetchEventSource("http://localhost:8080/chat", {
         method: "POST",
@@ -149,20 +162,22 @@ export default function App() {
 
           if (event.event === "custom") {
             if (parsed?.type === "toolCall:start") {
-              const toolText = formatToolCallMessage(parsed);
-              updateMessageContent(toolMessageId, toolText);
+              addMessage(
+                createToolCallMessage(
+                  parsed.payload?.name,
+                  parsed.payload?.args || {},
+                ),
+              );
               return;
             }
 
             if (parsed?.type === "toolCall:end") {
-              const toolText = formatToolCallMessage(parsed);
-              updateMessageContent(toolMessageId, toolText);
-              return;
-            }
-
-            if (parsed?.type === "toolCall:error") {
-              const toolText = formatToolCallMessage(parsed);
-              updateMessageContent(toolMessageId, toolText);
+              addMessage(
+                createToolResultMessage(
+                  parsed.payload?.name,
+                  parsed.payload?.result,
+                ),
+              );
               return;
             }
           }
@@ -217,12 +232,7 @@ export default function App() {
     const toolCallMessage = createMessage("toolCall", "");
     const assistantMessage = createMessage("ai", "");
 
-    const nextConversation = [
-      ...messages,
-      userMessage,
-      toolCallMessage,
-      assistantMessage,
-    ];
+    const nextConversation = [...messages, userMessage, assistantMessage];
 
     setMessages(nextConversation);
     setInput("");
@@ -231,10 +241,12 @@ export default function App() {
     await streamChatResponse(
       nextConversation,
       assistantMessage.id,
-      toolCallMessage.id,
+      // toolCallMessage.id,
     );
   };
-
+  const addMessage = (message) => {
+    setMessages((prev) => [...prev, message]);
+  };
   const handleStop = () => {
     abortControllerRef.current?.abort();
     setLoading(false);
@@ -257,7 +269,7 @@ export default function App() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-500 via-violet-500 to-sky-400 shadow-lg shadow-violet-950/30">
-              <Sparkles className="h-6 w-6 text-white" />
+              <Gem className="h-6 w-6 text-white" />
             </div>
             <div className="min-w-0">
               <p className="truncate text-xs text-zinc-500">
@@ -283,7 +295,7 @@ export default function App() {
           {!hasMessages && (
             <div className="w-full max-w-3xl text-center">
               <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-fuchsia-500 via-violet-500 to-sky-400 shadow-[0_20px_60px_rgba(124,58,237,0.25)] sm:h-24 sm:w-24">
-                <Sparkles className="h-10 w-10 text-white" />
+                <Gem className="h-10 w-10 text-white" />
               </div>
 
               <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl">
@@ -328,22 +340,21 @@ export default function App() {
                     message.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
-                  <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm ${
-                      message.role === "user"
-                        ? "bg-white text-zinc-950"
-                        : message.role === "toolCall"
-                          ? "border border-sky-500/20 bg-sky-500/10 text-sky-300"
+                  {message.kind === "tool_call" ||
+                  message.kind === "tool_result" ? (
+                    <ToolMessageCard message={message} />
+                  ) : (
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm ${
+                        message.role === "user"
+                          ? "bg-white text-zinc-950"
                           : "border border-white/10 bg-zinc-900 text-zinc-100"
-                    }`}
-                  >
-                    {message.content ||
-                      (loading && message.role === "ai"
-                        ? "Typing..."
-                        : loading && message.role === "toolCall"
-                          ? "Generating..."
-                          : "")}
-                  </div>
+                      }`}
+                    >
+                      {message.content ||
+                        (loading && message.role === "ai" ? "Typing..." : "")}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
