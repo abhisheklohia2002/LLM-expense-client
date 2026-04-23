@@ -1,7 +1,8 @@
 import { Gem } from 'lucide-react'
 import React from 'react'
+import User from '../user/User'
 
-export default function Header() {
+export default function HeaderChat() {
   return (
      <header className="border-b border-white/8 bg-zinc-950/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
@@ -11,7 +12,7 @@ export default function Header() {
             </div>
             <div className="min-w-0">
               <p className="truncate text-xs text-zinc-500">
-                abhisheklohia46458@gmail.com
+                {/* abhisheklohia46458@gmail.com */}
               </p>
               <div className="mt-1">
                 <h1 className="text-base font-semibold tracking-tight text-zinc-100 sm:text-lg">
@@ -22,8 +23,10 @@ export default function Header() {
             </div>
           </div>
 
-          <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
-            Online
+          <div className="rounded-full border border-emerald-500/20 bg-[emerald]-500/10 px-3 py-3 text-xs font-medium text-emerald-400 cursor-pointer">
+          <User/> 
+          {/* Todo after login we can show both thing user Avater and online  */}
+           {/* Online */}
           </div>
         </div>
       </header>
