@@ -19,6 +19,7 @@ import { fetchEventSource } from "@microsoft/fetch-event-source";
 import ToolMessageCard from "./components/toolCard/ToolMessageCard";
 import MessageAvatar from "./components/avatar/MessageAvatar";
 import AddDropdown from "./components/AddDropdown/AddDropdown";
+import { ChartMessageCard } from "./components/charts/ChartMessageCard";
 
 const featureCards = [
   {
@@ -347,13 +348,18 @@ export default function App() {
                   )}
                   {message.kind === "tool_call" ||
                   message.kind === "tool_result" ? (
+                    <>
+                    <div className="flex flex-col gap-3 w-full">
                     <ToolMessageCard message={message} />
+                     <ChartMessageCard message={message} />
+                    </div>
+                    </>
                   ) : (
                     <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm ${
+                      className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm  ${
                         message.role === "user"
-                          ? "bg-white text-zinc-950"
-                          : "border border-white/10 bg-zinc-900 text-zinc-100"
+                          ? "bg-white text-zinc-950 mr-2"
+                          : "border border-white/10 bg-zinc-900 text-zinc-100 ml-2"
                       }`}
                     >
                       {message.content ||
