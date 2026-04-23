@@ -20,6 +20,7 @@ import ToolMessageCard from "./components/toolCard/ToolMessageCard";
 import MessageAvatar from "./components/avatar/MessageAvatar";
 import AddDropdown from "./components/AddDropdown/AddDropdown";
 import { ChartMessageCard } from "./components/charts/ChartMessageCard";
+import ToChartSeries from "./helper/ToChartSeries";
 
 const featureCards = [
   {
@@ -65,6 +66,14 @@ const createToolResultMessage = (toolName, result) => ({
   kind: "tool_result",
   toolName,
   result,
+});
+const createChartMessage = ({ title, description, data }) => ({
+  id: `chart-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  role: "ai",
+  type: "chart",
+  title,
+  description,
+  data,
 });
 export default function App() {
   const [input, setInput] = useState("");
@@ -175,12 +184,24 @@ export default function App() {
             }
 
             if (parsed?.type === "toolCall:end") {
-              addMessage(
-                createToolResultMessage(
-                  parsed.payload?.name,
-                  parsed.payload?.result,
-                ),
-              );
+              const toolName = parsed.payload?.name;
+              const result = parsed.payload?.result;
+
+              addMessage(createToolResultMessage(toolName, result));
+
+              if (
+                toolName === "generateChart_expense" &&
+                result?.status === "success"
+              ) {
+                addMessage(
+                  createChartMessage({
+                    title: "Expense Chart",
+                    description: `${formatDate(result.from)} to ${formatDate(result.to)} • grouped by ${result.groupBy}`,
+                    data: ToChartSeries(result),
+                  }),
+                );
+              }
+
               return;
             }
           }
@@ -336,41 +357,45 @@ export default function App() {
 
           {hasMessages && (
             <div className="mt-10 w-full max-w-3xl space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  {message.role !== "user" && message.kind != "tool_call" && (
-                    <MessageAvatar message={message} />
-                  )}
-                  {message.kind === "tool_call" ||
-                  message.kind === "tool_result" ? (
-                    <>
-                    <div className="flex flex-col gap-3 w-full">
-                    <ToolMessageCard message={message} />
-                     <ChartMessageCard message={message} />
-                    </div>
-                    </>
-                  ) : (
-                    <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm  ${
-                        message.role === "user"
-                          ? "bg-white text-zinc-950 mr-2"
-                          : "border border-white/10 bg-zinc-900 text-zinc-100 ml-2"
-                      }`}
-                    >
-                      {message.content ||
-                        (loading && message.role === "ai" ? "Typing..." : "")}
-                    </div>
-                  )}
-                  {message.role === "user" && (
-                    <MessageAvatar message={message} />
-                  )}
-                </div>
-              ))}
+              {messages.map((message) => {
+                const isUser = message.role === "user";
+                const isTool = message.role === "tool";
+                const isChart = message.type === "chart";
+
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                  >
+                    {!isUser && !isTool && <MessageAvatar message={message} />}
+
+                    {isChart ? (
+                      <div className="ml-2 w-full">
+                        <ChartMessageCard message={message} />
+                      </div>
+                    ) : isTool ? (
+                      <div className="w-full">
+                        <ToolMessageCard message={message} />
+                      </div>
+                    ) : (
+                      <div
+                        className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm ${
+                          isUser
+                            ? "mr-2 bg-white text-zinc-950"
+                            : "ml-2 border border-white/10 bg-zinc-900 text-zinc-100"
+                        }`}
+                      >
+                        {message.content ||
+                          (loading && message.role === "ai" ? "Typing..." : "")}
+                      </div>
+                    )}
+
+                    {message.role === "user" && (
+                      <MessageAvatar message={message} />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -394,7 +419,7 @@ export default function App() {
 
             <div className="flex items-center justify-between px-5 pb-4 pt-2">
               <div className="flex items-center gap-3">
-                <AddDropdown/>
+                <AddDropdown />
                 <button
                   type="button"
                   onClick={loading ? handleStop : undefined}
