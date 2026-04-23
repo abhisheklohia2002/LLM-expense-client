@@ -16,7 +16,9 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import ToolMessageCard from "./components/ui/toolCard/ToolMessageCard";
+import ToolMessageCard from "./components/toolCard/ToolMessageCard";
+import MessageAvatar from "./components/avatar/MessageAvatar";
+import AddDropdown from "./components/AddDropdown/AddDropdown";
 
 const featureCards = [
   {
@@ -306,7 +308,7 @@ export default function App() {
                 information, analysis, and creative solutions.
               </p>
 
-              <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-2">
+              {/* <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-2">
                 {featureCards.map(({ icon: Icon, title, description }) => (
                   <Card
                     key={title}
@@ -327,7 +329,7 @@ export default function App() {
                     </CardContent>
                   </Card>
                 ))}
-              </div>
+              </div> */}
             </div>
           )}
 
@@ -340,6 +342,9 @@ export default function App() {
                     message.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
+                  {message.role !== "user" && message.kind != "tool_call" && (
+                    <MessageAvatar message={message} />
+                  )}
                   {message.kind === "tool_call" ||
                   message.kind === "tool_result" ? (
                     <ToolMessageCard message={message} />
@@ -354,6 +359,9 @@ export default function App() {
                       {message.content ||
                         (loading && message.role === "ai" ? "Typing..." : "")}
                     </div>
+                  )}
+                  {message.role === "user" && (
+                    <MessageAvatar message={message} />
                   )}
                 </div>
               ))}
@@ -380,14 +388,7 @@ export default function App() {
 
             <div className="flex items-center justify-between px-5 pb-4 pt-2">
               <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-white/95 transition hover:bg-white/5"
-                  aria-label="Add"
-                >
-                  <Plus className="h-6 w-6 stroke-[2]" />
-                </button>
-
+                <AddDropdown/>
                 <button
                   type="button"
                   onClick={loading ? handleStop : undefined}
