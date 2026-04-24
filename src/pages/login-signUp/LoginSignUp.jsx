@@ -81,7 +81,23 @@ export default function LoginAndSignUp() {
       console.log("Signup submitted:", signupData);
     }
   };
+  const handleContinueWithGoogle = () => {
+    const query = {
+      client_id: import.meta.env.VITE_PUBLIC_GOOGLE_OAUTH_CLIENT_ID,
+      redirect_uri: import.meta.env.VITE_PUBLIC_GOOGLE_OAUTH_REDIRECT_URI,
+      response_type: "code",
+      scope: import.meta.env.VITE_PUBLIC_GOOGLE_OAUTH_SCOPES,
+      access_type: "offline",
+      prompt: "consent",
+    };
 
+
+
+    const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    url.search = new URLSearchParams(query).toString();
+
+    window.location.href = url.toString();
+  };
   const inputBaseClass =
     "w-full rounded-xl border bg-[#f7f7f8] px-4 py-3 text-[15px] text-[#1f1f1f] outline-none transition-all duration-200 placeholder:text-[#9ca3af]";
   const inputErrorClass = "border-red-400 focus:ring-2 focus:ring-red-200";
@@ -94,7 +110,7 @@ export default function LoginAndSignUp() {
         <div className="flex justify-center">
           <div className="h-[58px] w-[58px] rounded-xl bg-[#2d2d2f] flex items-center justify-center shadow-sm">
             <span className="text-white text-[34px] font-bold leading-none">
-                <Gem/>
+              <Gem />
             </span>
           </div>
         </div>
@@ -113,9 +129,7 @@ export default function LoginAndSignUp() {
             type="button"
             onClick={() => handleToggle("login")}
             className={`w-1/2 rounded-[10px] py-2.5 text-sm font-medium transition-all duration-300 ${
-              isLogin
-                ? "bg-white text-[#1f1f1f] shadow-sm"
-                : "text-[#777]"
+              isLogin ? "bg-white text-[#1f1f1f] shadow-sm" : "text-[#777]"
             }`}
           >
             Login
@@ -124,16 +138,17 @@ export default function LoginAndSignUp() {
             type="button"
             onClick={() => handleToggle("signup")}
             className={`w-1/2 rounded-[10px] py-2.5 text-sm font-medium transition-all duration-300 ${
-              !isLogin
-                ? "bg-white text-[#1f1f1f] shadow-sm"
-                : "text-[#777]"
+              !isLogin ? "bg-white text-[#1f1f1f] shadow-sm" : "text-[#777]"
             }`}
           >
             Sign Up
           </button>
         </div>
         <div className="mt-7">
-          <button className="w-full rounded-xl bg-gradient-to-r from-[#2d313e] to-[#6b6f82] py-3.5 text-white text-[15px] font-medium shadow-sm transition hover:opacity-95">
+          <button
+            onClick={handleContinueWithGoogle}
+            className="w-full rounded-xl bg-gradient-to-r from-[#2d313e] to-[#6b6f82] py-3.5 text-white text-[15px] font-medium shadow-sm transition hover:opacity-95"
+          >
             Continue with Google
           </button>
         </div>
@@ -233,9 +248,7 @@ export default function LoginAndSignUp() {
                   }`}
                 />
                 {touched.email && signupErrors.email && (
-                  <p className="mt-1 text-xs text-red-500">
-                    Email is required
-                  </p>
+                  <p className="mt-1 text-xs text-red-500">Email is required</p>
                 )}
               </div>
 
@@ -280,11 +293,12 @@ export default function LoginAndSignUp() {
                     Confirm password is required
                   </p>
                 )}
-                {!signupErrors.confirmPassword && signupErrors.passwordMatch && (
-                  <p className="mt-1 text-xs text-red-500">
-                    Passwords do not match
-                  </p>
-                )}
+                {!signupErrors.confirmPassword &&
+                  signupErrors.passwordMatch && (
+                    <p className="mt-1 text-xs text-red-500">
+                      Passwords do not match
+                    </p>
+                  )}
               </div>
 
               <button

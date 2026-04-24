@@ -296,6 +296,7 @@ export default function Home() {
     const data = await res.json();
     console.log(file, "file ---->");
   };
+  
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
