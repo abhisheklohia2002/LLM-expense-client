@@ -147,7 +147,7 @@ export default function Home() {
     abortControllerRef.current = controller;
     let toolMessageId = null;
     try {
-      await fetchEventSource("http://localhost:8080/chat", {
+      await fetchEventSource(`${import.meta.env.VITE_BACKEND_API_URL}/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

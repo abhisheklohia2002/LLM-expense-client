@@ -1,5 +1,7 @@
+import { useMutation } from "@tanstack/react-query";
 import { Gem } from "lucide-react";
 import React, { useState } from "react";
+import { signUp } from "../../http/api/api.https";
 
 export default function LoginAndSignUp() {
   const [isLogin, setIsLogin] = useState(true);
@@ -16,6 +18,53 @@ export default function LoginAndSignUp() {
     confirmPassword: "",
   });
 
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    setTouched({
+      email: true,
+      password: true,
+    });
+
+    if (!loginErrors.email && !loginErrors.password) {
+      console.log("Login submitted:", loginData);
+    }
+  };
+
+  const handleSignupSubmit = async (e) => {
+    e.preventDefault();
+    setTouched({
+      fullName: true,
+      email: true,
+      password: true,
+      confirmPassword: true,
+    });
+
+    if (
+      !signupErrors.fullName &&
+      !signupErrors.email &&
+      !signupErrors.password &&
+      !signupErrors.confirmPassword &&
+      !signupErrors.passwordMatch
+    ) {
+      signUpMutate({
+        fullName: signupData.fullName,
+        email: signupData.email,
+        password: signupData.password,
+        role: "user",
+      });
+    }
+  };
+
+  const { mutate: signUpMutate, isPending } = useMutation({
+    mutationKey: ["signUp"],
+    mutationFn: signUp,
+    onSuccess: (data) => {
+      console.log("Sign up successfully", data);
+    },
+    onError: (error) => {
+      console.log("Sign up failed", error);
+    },
+  });
   const handleToggle = (mode) => {
     setTouched({});
     setIsLogin(mode === "login");
@@ -50,37 +99,6 @@ export default function LoginAndSignUp() {
       signupData.password !== signupData.confirmPassword,
   };
 
-  const handleLoginSubmit = (e) => {
-    e.preventDefault();
-    setTouched({
-      email: true,
-      password: true,
-    });
-
-    if (!loginErrors.email && !loginErrors.password) {
-      console.log("Login submitted:", loginData);
-    }
-  };
-
-  const handleSignupSubmit = (e) => {
-    e.preventDefault();
-    setTouched({
-      fullName: true,
-      email: true,
-      password: true,
-      confirmPassword: true,
-    });
-
-    if (
-      !signupErrors.fullName &&
-      !signupErrors.email &&
-      !signupErrors.password &&
-      !signupErrors.confirmPassword &&
-      !signupErrors.passwordMatch
-    ) {
-      console.log("Signup submitted:", signupData);
-    }
-  };
   const handleContinueWithGoogle = () => {
     const query = {
       client_id: import.meta.env.VITE_PUBLIC_GOOGLE_OAUTH_CLIENT_ID,
@@ -90,8 +108,6 @@ export default function LoginAndSignUp() {
       access_type: "offline",
       prompt: "consent",
     };
-
-
 
     const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
     url.search = new URLSearchParams(query).toString();
@@ -302,10 +318,11 @@ export default function LoginAndSignUp() {
               </div>
 
               <button
+                disabled={isPending}
                 type="submit"
                 className="w-full rounded-xl bg-[#ececec] py-3.5 text-[15px] font-medium text-[#1f1f1f] border border-[#e2e2e2] transition hover:bg-[#e6e6e6]"
               >
-                Sign Up
+                {isPending ? "Signing Up..." : "Sign Up"}
               </button>
             </form>
           )}
