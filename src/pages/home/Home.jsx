@@ -23,7 +23,10 @@ import { ChartMessageCard } from "../../components/charts/ChartMessageCard";
 import ToChartSeries from "../../helper/ToChartSeries";
 import HeaderChat from "../../components/header/Header";
 import Sidebar from "../../components/sidebar/Sidebar";
-
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createTab } from "../../http/api/api.https";
+import { useNavigate, useParams } from "react-router";
+import { useAuthStore, usechatWindow } from "../../store/Auth/AuthStore";
 const featureCards = [
   {
     icon: Lightbulb,
@@ -78,6 +81,8 @@ const createChartMessage = ({ title, description, data }) => ({
   data,
 });
 export default function Home() {
+  const { user } = useAuthStore();
+  const { setChatWindow } = usechatWindow();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -85,6 +90,8 @@ export default function Home() {
   const bottomRef = useRef(null);
   const hasMessages = messages.length > 0;
   const [collapse, setCollapse] = useState(false);
+  const { chatId } = useParams();
+  const navigate = useNavigate();
   const appendChunkToMessage = (messageId, chunk) => {
     setMessages((prev) =>
       prev.map((msg) =>
@@ -143,12 +150,16 @@ export default function Home() {
     return "";
   };
 
-  const streamChatResponse = async (conversation, assistantMessageId) => {
+  const streamChatResponse = async (
+    conversation,
+    assistantMessageId,
+    currentChatId,
+  ) => {
     const controller = new AbortController();
     abortControllerRef.current = controller;
     let toolMessageId = null;
     try {
-      await fetchEventSource(`${import.meta.env.VITE_BACKEND_API_URL}/chat`, {
+      await fetchEventSource(`${import.meta.env.VITE_BACKEND_API_URL}/chat/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -160,6 +171,7 @@ export default function Home() {
               role,
               content,
             })),
+          chatId: currentChatId,
         }),
         signal: controller.signal,
 
@@ -250,10 +262,38 @@ export default function Home() {
     }
   };
 
+  const {
+    refetch: refetchChat,
+    data: chatGet,
+    isSuccess: isSuccessGet,
+  } = useQuery({
+    queryKey: ["chatGet", user?.user?._id],
+    queryFn: () => getTab(user?.user?._id),
+    enabled: !!user?.user?._id,
+  });
   const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed || loading) return;
+    let currentChatId = chatId;
 
+    if (!currentChatId) {
+      const res = await createTabMutateAsync({
+        userId: user?.user?._id,
+      });
+      currentChatId = res.data?.chat?._id;
+      let newRecord = [res.data?.chat]
+      console.log(currentChatId, "/");
+
+      if (!currentChatId) {
+        console.log("Chat id not found after create tab", res);
+        return;
+      }
+      await refetchChat();
+      const oldState = [...newRecord,...chatGet?.data?.chat.reverse()]
+      setChatWindow(oldState);
+      console.log(oldState)
+      navigate(`/chat/${currentChatId}`);
+    }
     const userMessage = createMessage("user", trimmed);
     const toolCallMessage = createMessage("toolCall", "");
     const assistantMessage = createMessage("ai", "");
@@ -267,7 +307,7 @@ export default function Home() {
     await streamChatResponse(
       nextConversation,
       assistantMessage.id,
-      // toolCallMessage.id,
+      currentChatId,
     );
   };
   const addMessage = (message) => {
@@ -277,6 +317,14 @@ export default function Home() {
     abortControllerRef.current?.abort();
     setLoading(false);
   };
+
+  const { mutateAsync: createTabMutateAsync, isPending } = useMutation({
+    mutationKey: ["chatCreate"],
+    mutationFn: createTab,
+    onError: (error) => {
+      console.log("Chat Tab failed", error);
+    },
+  });
 
   const handleKeyDown = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -383,10 +431,11 @@ export default function Home() {
             collapse ? "left-[76px]" : "left-[320px]"
           }`}
         >
-          <div className="relative"
-          style={{
-            margin:"14px"
-          }}
+          <div
+            className="relative"
+            style={{
+              margin: "14px",
+            }}
           >
             <div className="rounded-[28px] border border-white/10 bg-zinc-900/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
               <div className="px-6 pt-5">

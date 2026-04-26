@@ -12,11 +12,12 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 export default function RoutesPages() {
-  const queryClient = new QueryClient()
+  const queryClient = new QueryClient();
   return (
     <QueryClientProvider client={queryClient}>
       <Routes>
         <Route index element={<Home />} />
+        <Route path="/chat/:chatId" element={<Home />} />
         {/* <Route path="about" element={<About />} /> */}
 
         <Route element={<AuthLayout />}>

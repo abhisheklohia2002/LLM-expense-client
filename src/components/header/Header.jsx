@@ -19,7 +19,7 @@ export default function HeaderChat() {
               </p>
               <div className="mt-1">
                 <h1 className="text-base font-semibold tracking-tight text-zinc-100 sm:text-lg">
-                  AI Expense Tracker
+                  BudgetBrain AI
                 </h1>
                 <p className="text-sm text-zinc-500">Powered by advanced AI</p>
               </div>

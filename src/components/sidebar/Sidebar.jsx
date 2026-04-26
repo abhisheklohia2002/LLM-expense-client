@@ -10,7 +10,7 @@ import {
 } from "@ant-design/icons";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createTab, deleteTab, getTab, self, updateTab } from "../../http/api/api.https";
-import { useAuthStore } from "../../store/Auth/AuthStore";
+import { useAuthStore, usechatWindow } from "../../store/Auth/AuthStore";
 import "./sidebar.css";
 const { Sider } = Layout;
 const { Text } = Typography;
@@ -18,7 +18,8 @@ import { useNavigate } from "react-router";
 import ChatOptions from "../user/User";
 export default function Sidebar({ setCollapse }) {
   const [collapsed, setCollapsed] = useState(false);
-  const { user } = useAuthStore();
+  const { user,setUser } = useAuthStore();
+  const {chatWindow}  = usechatWindow()
   const { refetch, data, isSuccess } = useQuery({
     queryKey: ["self"],
     queryFn: self,
@@ -93,7 +94,7 @@ export default function Sidebar({ setCollapse }) {
       setRecentTabChat(chat);
     }
   }, [isSuccessGet, chatGet]);
-  const recentItems = [];
+
   const handleCollapse = () => {
     setCollapsed(!collapsed);
     setCollapse(!collapsed);
@@ -142,6 +143,14 @@ export default function Sidebar({ setCollapse }) {
       });
     }
   };
+
+
+  useEffect(() => {
+  if (isSuccess && data?.data) {
+    setUser(data.data);
+  }
+}, [isSuccess, data, setUser]);
+
   useEffect(() => {
     refetch();
   }, []);
@@ -155,7 +164,7 @@ export default function Sidebar({ setCollapse }) {
       <div className="flex h-full flex-col px-3 py-4">
         <div className="mb-5 flex items-center justify-between">
           {!collapsed && (
-            <div className="text-xl font-semibold text-white">Chat</div>
+            <div className="text-xl font-semibold text-white">BudgetBrain AI</div>
           )}
 
           <Button

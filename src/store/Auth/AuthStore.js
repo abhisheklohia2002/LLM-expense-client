@@ -8,3 +8,12 @@ export const useAuthStore = create((set) => ({
 
   clearUser: () => set({ user: null }),
 }));
+
+
+export const  usechatWindow = create((set)=>({
+  chatWindow: null,
+
+  setChatWindow: (chat) => set({ chat }),
+
+  clearChatWindow: () => set({ chat: null }),
+}))
