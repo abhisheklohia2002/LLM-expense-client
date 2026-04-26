@@ -24,7 +24,7 @@ import ToChartSeries from "../../helper/ToChartSeries";
 import HeaderChat from "../../components/header/Header";
 import Sidebar from "../../components/sidebar/Sidebar";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createTab } from "../../http/api/api.https";
+import { createTab, getMessagesByChatId } from "../../http/api/api.https";
 import { useNavigate, useParams } from "react-router";
 import { useAuthStore, usechatWindow } from "../../store/Auth/AuthStore";
 const featureCards = [
@@ -92,6 +92,13 @@ export default function Home() {
   const [collapse, setCollapse] = useState(false);
   const { chatId } = useParams();
   const navigate = useNavigate();
+
+  const { data: messageList, isLoading: messageLoading } = useQuery({
+    queryKey: ["messages", chatId],
+    queryFn: () => getMessagesByChatId(chatId),
+    enabled: !!chatId,
+  });
+
   const appendChunkToMessage = (messageId, chunk) => {
     setMessages((prev) =>
       prev.map((msg) =>
@@ -277,11 +284,16 @@ export default function Home() {
     let currentChatId = chatId;
 
     if (!currentChatId) {
+      const userId = user?.user?._id;
+      if (!userId) {
+        navigate("/login");
+        return;
+      }
       const res = await createTabMutateAsync({
         userId: user?.user?._id,
       });
       currentChatId = res.data?.chat?._id;
-      let newRecord = [res.data?.chat]
+      let newRecord = [res.data?.chat];
       console.log(currentChatId, "/");
 
       if (!currentChatId) {
@@ -289,9 +301,9 @@ export default function Home() {
         return;
       }
       await refetchChat();
-      const oldState = [...newRecord,...chatGet?.data?.chat.reverse()]
+      const oldState = [...newRecord, ...chatGet?.data?.chat.reverse()];
       setChatWindow(oldState);
-      console.log(oldState)
+      console.log(oldState);
       navigate(`/chat/${currentChatId}`);
     }
     const userMessage = createMessage("user", trimmed);
@@ -349,6 +361,38 @@ export default function Home() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (!chatId) {
+      setMessages([]);
+      return;
+    }
+
+    const oldMessages = messageList?.data?.message || [];
+    const formattedMessages = oldMessages.map((msg) => {
+      if (msg.type === "chart") {
+        return {
+          id: msg._id,
+          role: "ai",
+          type: "chart",
+          title: msg.chart?.title || "Expense Chart",
+          description: msg.chart?.description || "",
+          data: ToChartSeries({
+            status: "success",
+            chartData: msg.chart?.data || [],
+          }),
+        };
+      }
+
+      return {
+        id: msg._id,
+        role: msg.role,
+        content: msg.content,
+      };
+    });
+
+    setMessages(formattedMessages);
+  }, [chatId, messageList]);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50">

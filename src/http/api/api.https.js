@@ -35,3 +35,9 @@ export const updateTab = async(chatId,payload)=>{
 export const deleteTab = async(chatId)=>{
   return await api.delete(`/chat/delete/${chatId}`);
 }
+
+
+
+export const getMessagesByChatId = (chatId) => {
+  return api.get(`/chat/messages/${chatId}`);
+};
