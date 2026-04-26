@@ -1,7 +1,7 @@
 import { Ellipsis as EllipsisIcon } from "lucide-react";
 import { useState } from "react";
 
-export default function ChatOptions() {
+export default function ChatOptions({ isRename = false }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -16,6 +16,12 @@ export default function ChatOptions() {
 
       {open && (
         <div className="absolute right-0 top-9 z-[9999] w-40 rounded-xl border border-white/10 bg-[#222] p-2 shadow-xl">
+          {isRename && (
+            <button className="w-full rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10">
+            Rename
+          </button>
+          )}
+
           <button className="w-full rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10">
             Pin to chat
           </button>

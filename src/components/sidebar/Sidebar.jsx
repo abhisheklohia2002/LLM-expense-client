@@ -3,14 +3,13 @@ import { Layout, Menu, Button, Typography, Divider } from "antd";
 import {
   EditOutlined,
   SearchOutlined,
-  FolderAddOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   DollarOutlined,
   TeamOutlined,
 } from "@ant-design/icons";
-import { useQuery } from "@tanstack/react-query";
-import { self } from "../../http/api/api.https";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createTab, getTab, self } from "../../http/api/api.https";
 import { useAuthStore } from "../../store/Auth/AuthStore";
 import "./sidebar.css";
 const { Sider } = Layout;
@@ -26,6 +25,7 @@ export default function Sidebar({ setCollapse }) {
     enabled: false,
   });
   const navigate = useNavigate();
+  const [recentTabChat, setRecentTabChat] = useState([]);
   const items = [
     {
       key: "new-chat",
@@ -37,33 +37,39 @@ export default function Sidebar({ setCollapse }) {
       icon: <SearchOutlined />,
       label: "Search chats",
     },
-    // {
-    //   key: "project",
-    //   icon: <FolderAddOutlined />,
-    //   label: "New project",
-    // },
-    // {
-    //   key: "aws",
-    //   icon: <FolderAddOutlined />,
-    //   label: "AWS learn",
-    // },
-    // {
-    //   key: "homework",
-    //   icon: <FolderAddOutlined />,
-    //   label: "Homework",
-    // },
     {
       key: "investing",
       icon: <DollarOutlined />,
       label: "Investing",
     },
   ];
+  const { mutate: createTabMutate, isPending } = useMutation({
+    mutationKey: "chatCreate",
+    mutationFn: createTab,
+    onSuccess: (data) => {
+      refetchChat();
+    },
+    onError: (error) => {
+      console.log("Chat Tab failed", error);
+    },
+  });
 
-  const recentItems = [
-    "Chat System DB Design",
-    "Backend Developer Email",
-    "Payment Request",
-  ];
+  const {
+    refetch: refetchChat,
+    data: chatGet,
+    isSuccess: isSuccessGet,
+  } = useQuery({
+    queryKey: ["chatGet", user?.data?._id || data?.data?.user?._id],
+    queryFn: () => getTab(user?.data?._id || data?.data?.user?._id),
+    enabled: !!(user?.data?._id || data?.data?.user?._id),
+  });
+  useEffect(() => {
+    if (isSuccessGet && chatGet) {
+      const chat = chatGet?.data?.chat || [];
+      setRecentTabChat(chat);
+    }
+  }, [isSuccessGet, chatGet]);
+  const recentItems = [];
   const handleCollapse = () => {
     setCollapsed(!collapsed);
     setCollapse(!collapsed);
@@ -71,6 +77,34 @@ export default function Sidebar({ setCollapse }) {
   const handleTeamInfo = (isExisted) => {
     if (!isExisted) {
       navigate("/login");
+    }
+  };
+
+  const newChat = () => {
+    const userId = user?.data?._id || data?.data?.user?._id;
+
+    if (!userId) {
+      navigate("/login");
+      return;
+    }
+
+    const title = "New Chat";
+
+    setRecentTabChat((prev) => [title, ...prev]);
+
+    createTabMutate({
+      userId,
+      title,
+    });
+  };
+  const handleMenuOptions = (e) => {
+    const isMenuOptions = e.key;
+    switch (isMenuOptions) {
+      case "new-chat":
+        newChat();
+        return;
+      default:
+        return;
     }
   };
 
@@ -100,10 +134,11 @@ export default function Sidebar({ setCollapse }) {
 
         <div className="flex-1 overflow-y-auto">
           <Menu
-            mode="vertical"
+            mode="inline"
             items={items}
             className="custom-sidebar-menu border-none bg-transparent"
             defaultSelectedKeys={["new-chat"]}
+            onClick={(e) => handleMenuOptions(e)}
           />
 
           {!collapsed && (
@@ -115,19 +150,18 @@ export default function Sidebar({ setCollapse }) {
               </Text>
 
               <div className="space-y-1">
-                {recentItems.map((item, index) => (
+                {recentTabChat?.map((item, index) => (
                   <div
-                    key={index}
+                    key={item._id}
                     className="relative flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-zinc-100 transition hover:bg-white/10"
                   >
                     <button
-                      
-                      key={index}
+                      key={item._id}
                       className="w-full px-3 py-2 text-left text-sm text-zinc-100 transition flex justify-between items-center"
                     >
-                      {item}
+                      {item.title}
                     </button>
-                    <ChatOptions />
+                    <ChatOptions isRename = {true} />
                   </div>
                 ))}
               </div>
@@ -145,7 +179,9 @@ export default function Sidebar({ setCollapse }) {
                       data?.data?.user?.fullName ||
                       "N/A"}
                   </div>
-                  <div className="text-xs text-zinc-400">Business</div>
+                  <div className="text-xs text-zinc-400">
+                    {user?.data?.role || data?.data?.user?.role || "N/A"}
+                  </div>
                 </>
               ) : (
                 <>

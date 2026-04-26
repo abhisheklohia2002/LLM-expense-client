@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { Gem } from "lucide-react";
 import React, { useState } from "react";
-import { signUp } from "../../http/api/api.https";
+import { login, signUp } from "../../http/api/api.https";
 import { useAuthStore } from "../../store/Auth/AuthStore";
 import { useNavigate } from "react-router";
 
@@ -31,7 +31,12 @@ export default function LoginAndSignUp() {
 
     if (!loginErrors.email && !loginErrors.password) {
       console.log("Login submitted:", loginData);
+      loginMutate({
+        email:loginData?.email,
+        password:loginData?.password
+      })
     }
+
   };
 
   const handleSignupSubmit = async (e) => {
@@ -71,6 +76,21 @@ export default function LoginAndSignUp() {
       console.log("Sign up failed", error);
     },
   });
+
+   const { mutate: loginMutate, isPending:isLoginPending } = useMutation({
+    mutationKey: ["login"],
+    mutationFn: login,
+    onSuccess: (data) => {
+      console.log("Log in successfully", data?.data);
+      setUser(data?.data);
+      navigate("/");
+    },
+    onError: (error) => {
+      console.log("Log in failed", error);
+    },
+  });
+
+
   const handleToggle = (mode) => {
     setTouched({});
     setIsLogin(mode === "login");
@@ -229,10 +249,12 @@ export default function LoginAndSignUp() {
               </div>
 
               <button
+               disabled={isLoginPending}
                 type="submit"
                 className="w-full rounded-xl bg-[#ececec] py-3.5 text-[15px] font-medium text-[#1f1f1f] border border-[#e2e2e2] transition hover:bg-[#e6e6e6]"
               >
-                Login
+                {isLoginPending ? "login...." : "login"}
+                
               </button>
             </form>
           ) : (
