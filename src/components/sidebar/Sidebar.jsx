@@ -9,7 +9,7 @@ import {
   TeamOutlined,
 } from "@ant-design/icons";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createTab, getTab, self } from "../../http/api/api.https";
+import { createTab, deleteTab, getTab, self, updateTab } from "../../http/api/api.https";
 import { useAuthStore } from "../../store/Auth/AuthStore";
 import "./sidebar.css";
 const { Sider } = Layout;
@@ -24,6 +24,8 @@ export default function Sidebar({ setCollapse }) {
     queryFn: self,
     enabled: false,
   });
+  const [renameChatId, setRenameChatId] = useState(null);
+  const [renameValue, setRenameValue] = useState("");
   const navigate = useNavigate();
   const [recentTabChat, setRecentTabChat] = useState([]);
   const items = [
@@ -54,6 +56,28 @@ export default function Sidebar({ setCollapse }) {
     },
   });
 
+  const { mutate: updateTabMutate, isPending: updatePending } = useMutation({
+    mutationKey: ["chatUpdate"],
+    mutationFn: ({ id, title }) => updateTab(id, { title }),
+    onSuccess: () => {
+      refetchChat();
+    },
+    onError: (error) => {
+      console.log("Chat Tab update failed", error);
+    },
+  });
+
+  const { mutate: deleteTabMutate, isPending: deletePending } = useMutation({
+    mutationKey: ["chatDelete"],
+    mutationFn: ({ id }) => deleteTab(id),
+    onSuccess: () => {
+      refetchChat();
+    },
+    onError: (error) => {
+      console.log("Chat Tab update failed", error);
+    },
+  });
+
   const {
     refetch: refetchChat,
     data: chatGet,
@@ -65,7 +89,7 @@ export default function Sidebar({ setCollapse }) {
   });
   useEffect(() => {
     if (isSuccessGet && chatGet) {
-      const chat = chatGet?.data?.chat || [];
+      const chat = chatGet?.data?.chat.reverse() || [];
       setRecentTabChat(chat);
     }
   }, [isSuccessGet, chatGet]);
@@ -108,6 +132,16 @@ export default function Sidebar({ setCollapse }) {
     }
   };
 
+  const handleMenuItems = (key, item) => {
+    if (key === "rename") {
+      setRenameChatId(item._id);
+      setRenameValue(item.title);
+    } else if (key === "trash") {
+      deleteTabMutate({
+        id: item._id,
+      });
+    }
+  };
   useEffect(() => {
     refetch();
   }, []);
@@ -150,18 +184,43 @@ export default function Sidebar({ setCollapse }) {
               </Text>
 
               <div className="space-y-1">
-                {recentTabChat?.map((item, index) => (
+                {recentTabChat?.map((item) => (
                   <div
                     key={item._id}
                     className="relative flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-zinc-100 transition hover:bg-white/10"
                   >
-                    <button
-                      key={item._id}
-                      className="w-full px-3 py-2 text-left text-sm text-zinc-100 transition flex justify-between items-center"
-                    >
-                      {item.title}
-                    </button>
-                    <ChatOptions isRename = {true} />
+                    {renameChatId === item._id ? (
+                      <input
+                        value={renameValue}
+                        autoFocus
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onBlur={() => setRenameChatId(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            updateTabMutate({
+                              id: item._id,
+                              title: renameValue,
+                            });
+
+                            setRenameChatId(null);
+                          }
+
+                          if (e.key === "Escape") {
+                            setRenameChatId(null);
+                          }
+                        }}
+                        className="w-full rounded bg-[#2a2a2a] px-3 py-2 text-sm text-white outline-none"
+                      />
+                    ) : (
+                      <button className="w-full px-3 py-2 text-left text-sm text-zinc-100 transition">
+                        {item.title}
+                      </button>
+                    )}
+
+                    <ChatOptions
+                      isRename={true}
+                      handleMenuItems={(key) => handleMenuItems(key, item)}
+                    />
                   </div>
                 ))}
               </div>

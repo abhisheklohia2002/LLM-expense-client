@@ -3,6 +3,9 @@ import React from 'react'
 import ChatOptions from '../user/User'
 
 export default function HeaderChat() {
+  const handleMenuItems = (key)=>{
+    console.log(key)
+  }
   return (
      <header className="border-b border-white/8 bg-zinc-950/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
@@ -24,7 +27,7 @@ export default function HeaderChat() {
           </div>
 
           <div >
-          <ChatOptions/>
+          <ChatOptions handleMenuItems={handleMenuItems} />
           </div>
         </div>
       </header>

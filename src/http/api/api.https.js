@@ -28,10 +28,10 @@ export const getTab = async(userId)=>{
 }
 
 
-export const updateTab = async(payload,chatId)=>{
+export const updateTab = async(chatId,payload)=>{
   return await api.put(`/chat/update/${chatId}`,payload);
 }
 
-export const deleteTab = async(payload,chatId)=>{
-  return await api.delete(`/chat/delete/${chatId}`,payload);
+export const deleteTab = async(chatId)=>{
+  return await api.delete(`/chat/delete/${chatId}`);
 }
