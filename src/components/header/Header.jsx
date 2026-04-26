@@ -1,6 +1,6 @@
 import { Gem } from 'lucide-react'
 import React from 'react'
-import User from '../user/User'
+import ChatOptions from '../user/User'
 
 export default function HeaderChat() {
   return (
@@ -23,10 +23,8 @@ export default function HeaderChat() {
             </div>
           </div>
 
-          <div className="rounded-full border border-emerald-500/20 bg-[emerald]-500/10 px-3 py-3 text-xs font-medium text-emerald-400 cursor-pointer">
-          <User/> 
-          {/* Todo after login we can show both thing user Avater and online  */}
-           {/* Online */}
+          <div >
+          <ChatOptions/>
           </div>
         </div>
       </header>

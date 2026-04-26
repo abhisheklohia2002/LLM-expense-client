@@ -2,8 +2,12 @@ import { useMutation } from "@tanstack/react-query";
 import { Gem } from "lucide-react";
 import React, { useState } from "react";
 import { signUp } from "../../http/api/api.https";
+import { useAuthStore } from "../../store/Auth/AuthStore";
+import { useNavigate } from "react-router";
 
 export default function LoginAndSignUp() {
+  const { setUser } = useAuthStore();
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [touched, setTouched] = useState({});
   const [loginData, setLoginData] = useState({
@@ -59,7 +63,9 @@ export default function LoginAndSignUp() {
     mutationKey: ["signUp"],
     mutationFn: signUp,
     onSuccess: (data) => {
-      console.log("Sign up successfully", data);
+      console.log("Sign up successfully", data?.data);
+      setUser(data?.data);
+      navigate("/");
     },
     onError: (error) => {
       console.log("Sign up failed", error);
@@ -124,8 +130,11 @@ export default function LoginAndSignUp() {
     <div className="w-full max-w-[540px] m-auto mt-20 items-center">
       <div className="rounded-[24px] border border-[#e5e7eb] bg-[#f8f8f8] shadow-[0_2px_8px_rgba(0,0,0,0.04)] px-6 sm:px-12 py-8 sm:py-10">
         <div className="flex justify-center">
-          <div className="h-[58px] w-[58px] rounded-xl bg-[#2d2d2f] flex items-center justify-center shadow-sm">
-            <span className="text-white text-[34px] font-bold leading-none">
+          <div
+            onClick={() => navigate("/")}
+            className="h-[58px] w-[58px] rounded-xl bg-[#2d2d2f] flex items-center justify-center shadow-sm cursor-pointer"
+          >
+            <span className="text-white text-[34px] font-bold leading-none ">
               <Gem />
             </span>
           </div>

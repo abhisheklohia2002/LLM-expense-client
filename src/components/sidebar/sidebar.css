@@ -1,0 +1,31 @@
+.custom-sidebar-menu {
+  background: transparent !important;
+  color: white !important;
+}
+
+.custom-sidebar-menu .ant-menu-item {
+  color: white !important;
+}
+
+.custom-sidebar-menu .ant-menu-item-icon {
+  color: white !important;
+}
+
+.custom-sidebar-menu .ant-menu-title-content {
+  color: white !important;
+}
+
+.custom-sidebar-menu .ant-menu-item-selected {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: white !important;
+}
+
+.custom-sidebar-menu .ant-menu-item-selected .ant-menu-item-icon,
+.custom-sidebar-menu .ant-menu-item-selected .ant-menu-title-content {
+  color: white !important;
+}
+
+.custom-sidebar-menu .ant-menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}
